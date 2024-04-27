@@ -1,9 +1,9 @@
 import React from 'react';
 
 interface DailyDifference {
+    unitDifference: any;
     date: string;
     difference: number;
-    differenceUnit: number;
 }
 
 interface ConsumptionTableProps {
