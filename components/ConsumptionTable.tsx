@@ -28,7 +28,7 @@ const ConsumptionTable: React.FC<ConsumptionTableProps> = ({ dailyDifferences })
                     <tr key={index} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
                         <td className="p-2">{dayDifference.date}</td>
                         <td className="p-2">৳{dayDifference.difference.toFixed(2)}</td>
-                        <td className="p-2">৳{dayDifference.unitDifference.toFixed(2)}</td>
+                        <td className="p-2">{dayDifference.unitDifference.toFixed(2)}</td>
                     </tr>
                 ))}
                 </tbody>
