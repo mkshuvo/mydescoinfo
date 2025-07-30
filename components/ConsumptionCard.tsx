@@ -10,7 +10,7 @@ const ConsumptionCard: React.FC<ConsumptionCardProps> = ({ recentConsumption }) 
             <div className="flex bg-green-200 p-4 rounded-md shadow-lg">
                 <div className="bg-yellow-400 w-2 h-30"></div>
                 <div className="ml-4">
-                    <h2 className="text-2xl text-black font-bold">Consumed Today</h2>
+                    <h2 className="text-2xl text-black font-bold">Consumed Last Day</h2>
                     <p className="text-9xl font-bold text-green-800">
                         ৳{recentConsumption.toFixed(2)}
                     </p>
