@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface AccountInfoprops {
-    meterNo: number;
-    accountNo: number;
+    meterNo: string;
+    accountNo: string;
     currentMonthConsumption: number;
     readingTime: string;
 }

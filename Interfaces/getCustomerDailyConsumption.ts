@@ -1,10 +1,10 @@
-interface DailyConsumptionResponse {
+export interface DailyConsumptionResponse {
     code: number;
     desc: string;
     data: DailyConsumptionInfo[];
 }
 
-interface DailyConsumptionInfo {
+export interface DailyConsumptionInfo {
     accountNo: string;
     consumedTaka: number;
     consumedUnit: number;
@@ -16,4 +16,10 @@ interface DailyConsumptionInfo {
     phaseType: string;
     sanctionLoad: number;
     tariffSolution: string;
+}
+
+export interface DailyConsumptionDifference {
+    date: string;
+    difference: number;
+    unitDifference: number;
 }

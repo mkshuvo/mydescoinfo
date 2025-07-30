@@ -1,10 +1,10 @@
-interface CustomerInfoResponse {
+export interface CustomerInfoResponse {
     code: number;
     desc: string;
     data: CustomerInfo;
 }
 
-interface CustomerInfo {
+export interface CustomerInfo {
     accountNo: string;
     contactNo: string;
     customerName: string;
