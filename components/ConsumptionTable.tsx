@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface DailyDifference {
-    unitDifference: any;
+    unitDifference: number;
     date: string;
     difference: number;
 }

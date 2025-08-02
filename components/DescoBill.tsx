@@ -24,7 +24,7 @@ const DescoBill = () => {
     const [balanceData, setBalanceData] = useRecoilState<BalanceInfo | null>(balanceState);
     const [dailyConsumptionData, setDailyConsumptionData] = useRecoilState<DailyConsumptionInfo[] | null>(dailyConsumptionState);
     
-    const [dailyDifferences, setDailyDifferences] = useState<DailyConsumptionDifference[]>([]);
+    const [dailyDifferences, setDailyDifferences] = useState<any[]>([]);
     const [recentConsumption, setRecentConsumption] = useState<number>(0);
 
     const [loadingCustomerInfo, setLoadingCustomerInfo] = useState<boolean>(true);
@@ -227,32 +227,57 @@ const DescoBill = () => {
         }
     }, [meterNo, fetchDailyConsumptionDataFromApi, scrapeDataAsFallback, setDailyConsumptionData]);
 
-    // Calculate daily consumption differences
+    // Calculate daily consumption values
     useEffect(() => {
-        if (dailyConsumptionData && dailyConsumptionData.length > 1) {
-            const differences = dailyConsumptionData.reduce<DailyConsumptionDifference[]>((acc, day, index, arr) => {
-                if (index === 0) return acc; // Skip the first day
-
-                const prevDay = arr[index - 1];
-                const difference = day.consumedTaka - prevDay.consumedTaka;
-                const unitDifference = day.consumedUnit - prevDay.consumedUnit;
+        if (dailyConsumptionData && dailyConsumptionData.length > 0) {
+            // Sort data by date to ensure correct order
+            const sortedData = [...dailyConsumptionData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            
+            const dailyValues = sortedData.map((day, index) => {
+                const currentDate = new Date(day.date);
+                const isFirstDayOfMonth = currentDate.getDate() === 1;
                 
-                acc.push({
+                // Handle taka difference - resets on 1st of each month
+                let takaDifference;
+                if (isFirstDayOfMonth) {
+                    takaDifference = day.consumedTaka;
+                } else {
+                    const prevDay = sortedData[index - 1];
+                    if (prevDay) {
+                        const prevDate = new Date(prevDay.date);
+                        const isPrevDaySameMonth = prevDate.getMonth() === currentDate.getMonth();
+                        takaDifference = isPrevDaySameMonth ? day.consumedTaka - prevDay.consumedTaka : day.consumedTaka;
+                    } else {
+                        takaDifference = day.consumedTaka;
+                    }
+                }
+                
+                // Handle unit difference - always calculate from previous day regardless of month
+                let unitDifference;
+                const prevDay = sortedData[index - 1];
+                if (prevDay) {
+                    unitDifference = day.consumedUnit - prevDay.consumedUnit;
+                } else {
+                    // First entry - show actual consumption as difference
+                    unitDifference = day.consumedUnit;
+                }
+                
+                return {
                     date: day.date,
-                    difference: difference,
+                    difference: takaDifference,
                     unitDifference: unitDifference
-                });
-                return acc;
-            }, []);
-
-            setDailyDifferences(differences);
-            if (differences.length > 0) {
-                setRecentConsumption(differences[differences.length - 1].difference);
+                };
+            });
+            
+            setDailyDifferences(dailyValues);
+            
+            // Set recent consumption to the last day's taka difference (monetary value)
+            if (dailyValues.length > 0) {
+                setRecentConsumption(dailyValues[dailyValues.length - 1].difference);
             }
-        } else if (dailyConsumptionData && dailyConsumptionData.length === 1) {
-            // Handle case with only one day of data, no difference to calculate
+        } else {
             setDailyDifferences([]);
-            setRecentConsumption(0); // Or handle as appropriate
+            setRecentConsumption(0);
         }
     }, [dailyConsumptionData]);
 
@@ -276,7 +301,7 @@ const DescoBill = () => {
                 <div>
                     {loadingBalance && <p>Loading balance...</p>}
                     {errorBalance && <p className="text-red-500">Error loading balance: {errorBalance}</p>}
-                    {balanceData && <BalanceCard balanceData={balanceData} />}
+                    {(meterNo && DEFAULT_ACCOUNT_NO) && <BalanceCard accountNo={DEFAULT_ACCOUNT_NO} meterNo={meterNo} />}
                 </div>
                 <div>
                     {loadingConsumption && <p>Loading consumption...</p>}
