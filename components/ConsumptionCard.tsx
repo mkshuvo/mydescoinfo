@@ -6,16 +6,11 @@ interface ConsumptionCardProps {
 
 const ConsumptionCard: React.FC<ConsumptionCardProps> = ({ recentConsumption }) => {
     return (
-        <div className="col-span-6 md:col-span-6 px-2">
-            <div className="flex bg-green-200 p-4 rounded-md shadow-lg">
-                <div className="bg-yellow-400 w-2 h-30"></div>
-                <div className="ml-4">
-                    <h2 className="text-2xl text-black font-bold">Consumed Last Day</h2>
-                    <p className="text-9xl font-bold text-green-800">
-                        ৳{recentConsumption.toFixed(2)}
-                    </p>
-                </div>
-            </div>
+        <div className="bg-gradient-to-br from-amber-900/40 to-amber-800/20 border border-amber-700/30 p-6 rounded-2xl shadow-lg">
+            <h2 className="text-lg text-amber-300 font-semibold mb-2">Yesterday&apos;s Consumption</h2>
+            <p className="text-5xl font-bold text-amber-400">
+                ৳ {recentConsumption.toFixed(2)}
+            </p>
         </div>
     );
 };

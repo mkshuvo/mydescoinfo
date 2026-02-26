@@ -1,14 +1,14 @@
-'use client'
-import DescoBill from '@/components/DescoBill';
-import { RecoilRoot } from 'recoil';
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth/server';
 
+export const dynamic = 'force-dynamic';
 
-const Home = () => {
-  return (
-    <RecoilRoot>
-      <DescoBill />
-    </RecoilRoot>
-  )
-};
+export default async function HomePage() {
+  const { data: session } = await auth.getSession();
 
-export default Home;
+  if (session) {
+    redirect('/dashboard');
+  } else {
+    redirect('/auth/sign-in');
+  }
+}

@@ -1,34 +1,37 @@
 import React from 'react';
 
-interface AccountInfoprops {
+interface AccountInfoProps {
     meterNo: string;
     accountNo: string;
     currentMonthConsumption: number;
     readingTime: string;
 }
 
-const AccountInfoCard: React.FC<AccountInfoprops> = ({ meterNo, accountNo, currentMonthConsumption, readingTime }) => {
+const AccountInfoCard: React.FC<AccountInfoProps> = ({
+    meterNo,
+    accountNo,
+    currentMonthConsumption,
+    readingTime,
+}) => {
+    const items = [
+        { label: 'Meter No', value: meterNo },
+        { label: 'Account No', value: accountNo },
+        { label: 'Monthly Consumption', value: `৳ ${currentMonthConsumption}` },
+        { label: 'Last Reading', value: readingTime },
+    ];
+
     return (
-        <div className="flex flex-col md:flex-row">
-            <div className="bg-green-200 text-black p-4 rounded-md shadow-lg w-full m-2">
-                <div className="flex flex-col md:grid md:grid-cols-2 md:gap-4">
-                    <div className="flex flex-col space-y-2">
-                        <p className="font-semibold text-lg">Meter No:</p>
-                        <p className="text-4xl">{meterNo}</p>
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mt-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Account Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {items.map((item) => (
+                    <div key={item.label}>
+                        <p className="text-sm text-gray-500 uppercase tracking-wider">
+                            {item.label}
+                        </p>
+                        <p className="text-lg text-white font-medium mt-1">{item.value}</p>
                     </div>
-                    <div className="flex flex-col space-y-2">
-                        <p className="font-semibold text-lg">Account No:</p>
-                        <p className="text-4xl">{accountNo}</p>
-                    </div>
-                    <div className="flex flex-col space-y-2">
-                        <p className="font-semibold text-lg">Current Month Consumption:</p>
-                        <p className="text-4xl font-bold">৳{currentMonthConsumption}</p>
-                    </div>
-                    <div className="flex flex-col space-y-2">
-                        <p className="font-semibold text-lg">Reading Time:</p>
-                        <p className="text-4xl">{readingTime}</p>
-                    </div>
-                </div>
+                ))}
             </div>
         </div>
     );

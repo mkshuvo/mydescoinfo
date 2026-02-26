@@ -1,36 +1,42 @@
 import React from 'react';
-
-interface DailyDifference {
-    unitDifference: number;
-    date: string;
-    difference: number;
-}
+import type { DailyConsumptionDifference } from '@/Interfaces/getCustomerDailyConsumption';
 
 interface ConsumptionTableProps {
-    dailyDifferences: DailyDifference[];
+    dailyDifferences: DailyConsumptionDifference[];
 }
 
 const ConsumptionTable: React.FC<ConsumptionTableProps> = ({ dailyDifferences }) => {
-    const sortedDailyDifferences = [...dailyDifferences].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = [...dailyDifferences].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
     return (
-        <div className="text-black text-4xl overflow-x-auto m-2">
-            <h2 className="text-5xl font-bold mt-2 mb-1 text-blue-50">Daily Consumption Differences</h2>
-            <table className="min-w-full bg-white border border-gray-300 rounded-md shadow-lg">
+        <div className="mt-6 overflow-x-auto">
+            <h2 className="text-2xl font-bold mb-4 text-white">Daily Consumption</h2>
+            <table className="min-w-full bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                 <thead>
-                <tr className="bg-gray-200 text-gray-700">
-                    <th className="p-2 text-left">Date</th>
-                    <th className="p-2 text-left">Consumed Taka</th>
-                    <th className="p-2 text-left">Consumed Unit</th>
-                </tr>
+                    <tr className="bg-gray-800 text-gray-300 text-sm uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left">Date</th>
+                        <th className="px-4 py-3 text-right">Consumed (৳)</th>
+                        <th className="px-4 py-3 text-right">Consumed (kWh)</th>
+                    </tr>
                 </thead>
                 <tbody>
-                {sortedDailyDifferences.map((dayDifference, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
-                        <td className="p-2">{dayDifference.date}</td>
-                        <td className="p-2">৳{dayDifference.difference.toFixed(2)}</td>
-                        <td className="p-2">{dayDifference.unitDifference.toFixed(2)}</td>
-                    </tr>
-                ))}
+                    {sorted.map((day, index) => (
+                        <tr
+                            key={day.date}
+                            className={`border-t border-gray-800 ${index % 2 === 0 ? 'bg-gray-900' : 'bg-gray-900/50'
+                                } hover:bg-gray-800/50 transition-colors`}
+                        >
+                            <td className="px-4 py-3 text-gray-300">{day.date}</td>
+                            <td className="px-4 py-3 text-right text-green-400 font-medium">
+                                ৳ {day.difference.toFixed(2)}
+                            </td>
+                            <td className="px-4 py-3 text-right text-blue-400 font-medium">
+                                {day.unitDifference.toFixed(2)}
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
         </div>
