@@ -8,7 +8,7 @@ import { syncAccountConsumption } from '@/lib/utils/syncAccount';
 
 /**
  * Daily cron job endpoint — intended to run at 8 AM BST (2 AM UTC).
- * Fetches yesterday's consumption for all active accounts and caches the results.
+ * Fetches last 30 days consumption for all active accounts and caches the results.
  *
  * Protected by CRON_SECRET Bearer token (validated in middleware.ts).
  */
@@ -27,14 +27,6 @@ export async function GET(request: NextRequest) {
         .from(descoAccounts)
         .where(eq(descoAccounts.isActive, true));
 
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0]!;
-
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-    const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0]!;
-
     const results: Array<{
         accountNo: string;
         status: 'success' | 'skipped' | 'error';
@@ -52,12 +44,12 @@ export async function GET(request: NextRequest) {
         }
 
         try {
-            // Fetch only the last 1 day (utility automatically fetches prev day for diff calculation)
+            // Fetch last 30 days of consumption data
             const result = await syncAccountConsumption(
                 account.id,
                 account.accountNo,
                 account.meterNo,
-                1
+                30
             );
 
             if (result.success) {

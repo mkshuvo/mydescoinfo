@@ -52,7 +52,8 @@ export default function AccountDetailPage() {
         refetch,
     } = useDescoData(
         account?.accountNo ?? null,
-        account?.meterNo ?? null
+        account?.meterNo ?? null,
+        accountId
     );
 
     const handleSync = async () => {

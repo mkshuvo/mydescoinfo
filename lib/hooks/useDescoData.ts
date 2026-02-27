@@ -7,6 +7,8 @@ import type { DailyConsumptionInfo } from '@/Interfaces/getCustomerDailyConsumpt
 import { calculateDailyDifferences } from '@/lib/utils/consumption';
 
 const PROXY_API_BASE_URL = '/api/descoProxy';
+const DB_BALANCE_API = '/api/balance';
+const DB_CONSUMPTION_API = '/api/consumption';
 
 interface ApiResponse<T> {
     data: T;
@@ -27,7 +29,8 @@ interface UseDescoDataResult {
 
 export function useDescoData(
     accountNo: string | null,
-    meterNo: string | null
+    meterNo: string | null,
+    accountId: string | null = null
 ): UseDescoDataResult {
     const {
         balanceData,
@@ -44,12 +47,55 @@ export function useDescoData(
         setErrorConsumption,
     } = useDescoStore();
 
+    const fetchBalanceFromDB = useCallback(async () => {
+        if (!accountId) return { data: null, fromDb: false };
+
+        try {
+            const response = await fetch(`${DB_BALANCE_API}?accountId=${accountId}`);
+            if (!response.ok) return { data: null, fromDb: false };
+            const result = await response.json();
+            if (result.data) {
+                return { data: result.data, fromDb: true };
+            }
+        } catch {
+            // Fall back to API
+        }
+        return { data: null, fromDb: false };
+    }, [accountId]);
+
+    const fetchConsumptionFromDB = useCallback(async () => {
+        if (!accountId) return { data: null, fromDb: false };
+
+        try {
+            const response = await fetch(`${DB_CONSUMPTION_API}?accountId=${accountId}`);
+            if (!response.ok) return { data: null, fromDb: false };
+            const result = await response.json();
+            if (result.data && result.data.length > 0) {
+                return { data: result.data, fromDb: true };
+            }
+        } catch {
+            // Fall back to API
+        }
+        return { data: null, fromDb: false };
+    }, [accountId]);
+
     const fetchBalance = useCallback(async () => {
         if (!accountNo || !meterNo) return;
 
         setLoadingBalance(true);
         setErrorBalance(null);
 
+        // Try DB first if accountId is available
+        if (accountId) {
+            const dbResult = await fetchBalanceFromDB();
+            if (dbResult.data) {
+                setBalanceData(dbResult.data);
+                setLoadingBalance(false);
+                return;
+            }
+        }
+
+        // Fall back to DESCO API
         try {
             const response = await fetch(
                 `${PROXY_API_BASE_URL}?endpoint=getBalance&accountNo=${accountNo}&meterNo=${meterNo}`
@@ -71,7 +117,7 @@ export function useDescoData(
         } finally {
             setLoadingBalance(false);
         }
-    }, [accountNo, meterNo, setBalanceData, setLoadingBalance, setErrorBalance]);
+    }, [accountNo, meterNo, accountId, setBalanceData, setLoadingBalance, setErrorBalance, fetchBalanceFromDB]);
 
     const fetchConsumption = useCallback(async () => {
         if (!accountNo || !meterNo) return;
@@ -79,6 +125,17 @@ export function useDescoData(
         setLoadingConsumption(true);
         setErrorConsumption(null);
 
+        // Try DB first if accountId is available
+        if (accountId) {
+            const dbResult = await fetchConsumptionFromDB();
+            if (dbResult.data) {
+                setDailyConsumptionData(dbResult.data);
+                setLoadingConsumption(false);
+                return;
+            }
+        }
+
+        // Fall back to DESCO API
         try {
             const dateTo = new Date().toISOString().split('T')[0];
             const dateFrom = new Date();
@@ -105,7 +162,7 @@ export function useDescoData(
         } finally {
             setLoadingConsumption(false);
         }
-    }, [accountNo, meterNo, setDailyConsumptionData, setLoadingConsumption, setErrorConsumption]);
+    }, [accountNo, meterNo, accountId, setDailyConsumptionData, setLoadingConsumption, setErrorConsumption, fetchConsumptionFromDB]);
 
     const refetch = useCallback(() => {
         fetchBalance();
