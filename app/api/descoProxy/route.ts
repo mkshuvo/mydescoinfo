@@ -2,8 +2,14 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/server';
+import https from 'https';
 
 const DESCO_API_BASE_URL = 'https://prepaid.desco.org.bd/api/tkdes/customer';
+
+// Agent to bypass SSL verification (DESCO API has certificate issues)
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
 // Whitelist of allowed DESCO API endpoints to prevent SSRF
 const ALLOWED_ENDPOINTS = new Set([
@@ -71,6 +77,8 @@ export async function GET(request: NextRequest) {
         Accept: 'application/json',
         'User-Agent': 'Mozilla/5.0',
       },
+      // @ts-expect-error - Agent is not in standard fetch types but works with Node.js
+      agent: httpsAgent,
     });
 
     const contentType = descoResponse.headers.get('content-type');

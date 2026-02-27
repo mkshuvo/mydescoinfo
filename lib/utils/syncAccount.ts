@@ -2,8 +2,14 @@ import { getDb } from '@/lib/db/db';
 import { dailyConsumptionCache } from '@/lib/db/schema';
 import type { DailyConsumptionInfo } from '@/Interfaces/getCustomerDailyConsumption';
 import type { BalanceInfo } from '@/Interfaces/getBalance';
+import https from 'https';
 
 const DESCO_API_BASE_URL = 'https://prepaid.desco.org.bd/api/tkdes/customer';
+
+// Agent to bypass SSL verification (DESCO API has certificate issues)
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
 interface ConsumptionApiResponse {
     code: number;
@@ -37,7 +43,11 @@ export async function syncAccountConsumption(
         // 1. Fetch consumption history
         const consumptionRes = await fetch(
             `${DESCO_API_BASE_URL}/getCustomerDailyConsumption?accountNo=${accountNo}&meterNo=${meterNo}&dateFrom=${fromDate}&dateTo=${toDate}`,
-            { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' } }
+            {
+                headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+                // @ts-expect-error - Agent is not in standard fetch types but works with Node.js
+                agent: httpsAgent,
+            }
         );
 
         if (!consumptionRes.ok) {
@@ -60,7 +70,11 @@ export async function syncAccountConsumption(
         try {
             const balanceRes = await fetch(
                 `${DESCO_API_BASE_URL}/getBalance?accountNo=${accountNo}&meterNo=${meterNo}`,
-                { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' } }
+                {
+                    headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+                    // @ts-expect-error - Agent is not in standard fetch types but works with Node.js
+                    agent: httpsAgent,
+                }
             );
             if (balanceRes.ok) {
                 const balanceData: BalanceApiResponse = await balanceRes.json();
