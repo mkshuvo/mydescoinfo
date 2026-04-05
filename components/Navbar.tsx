@@ -51,7 +51,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center gap-4">
                 <SignedIn>
                     <div className="h-10 w-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20">
-                        <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-full h-full rounded-full' } }} />
+                        <UserButton />
                     </div>
                 </SignedIn>
                 <SignedOut>
@@ -70,7 +70,7 @@ const Navbar: React.FC = () => {
                     type="button"
                     className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-primary hover:bg-surface-container-low transition-colors"
                     aria-controls="mobile-menu"
-                    aria-expanded={isMobileMenuOpen}
+                    aria-expanded={isMobileMenuOpen ? true : false}
                     onClick={toggleMobileMenu}
                 >
                     <span className="sr-only">Open main menu</span>

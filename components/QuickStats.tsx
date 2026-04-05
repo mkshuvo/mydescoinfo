@@ -14,7 +14,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({
     return (
         <div className="mb-12 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-surface-container-high rounded-xl p-6 border-l-4 border-primary">
-                <p className="text-on-surface-variant font-label text-sm mb-2">Total Monthly Spend</p>
+                <p className="text-on-surface-variant font-label text-sm mb-2">Total daily Spend</p>
                 <div className="flex items-baseline gap-2">
                     <span className="text-primary font-headline text-xl">৳</span>
                     <span className="text-4xl font-headline font-bold tracking-tight">
