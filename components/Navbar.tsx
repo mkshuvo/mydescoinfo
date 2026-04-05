@@ -51,7 +51,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center gap-4">
                 <SignedIn>
                     <div className="h-10 w-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20">
-                        <UserButton />
+                        <UserButton size="icon" />
                     </div>
                 </SignedIn>
                 <SignedOut>
