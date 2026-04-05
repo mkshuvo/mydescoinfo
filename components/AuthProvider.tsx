@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 export default function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     return (
         <NeonAuthUIProvider
-            authClient={authClient as ReactBetterAuthClient}
+            authClient={authClient as unknown as ReactBetterAuthClient}
             redirectTo="/dashboard"
             credentials={{ forgotPassword: true }}
         >

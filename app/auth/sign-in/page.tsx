@@ -25,7 +25,7 @@ export default function SignInPage() {
             });
 
             if (error) {
-                setError(error.message);
+                setError(error?.message ?? 'An error occurred');
                 setLoading(false);
                 return;
             }
