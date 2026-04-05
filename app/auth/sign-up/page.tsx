@@ -34,7 +34,7 @@ export default function SignUpPage() {
 
             router.push('/dashboard');
             router.refresh();
-        } catch (err) {
+        } catch {
             setError('An unexpected error occurred');
             setLoading(false);
         }
@@ -207,17 +207,19 @@ export default function SignUpPage() {
 
                         {/* Terms */}
                         <div className="flex items-start gap-3">
-                            <input
-                                type="checkbox"
-                                required
-                                className="mt-1 w-5 h-5 rounded bg-surface-container-high border border-outline-variant appearance-none cursor-pointer checked:bg-primary checked:border-primary transition-colors"
-                            />
-                            <span className="font-label text-sm text-on-surface-variant">
-                                I agree to the{' '}
-                                <a href="#" className="text-primary hover:text-primary/80">Terms of Service</a>
-                                {' '}and{' '}
-                                <a href="#" className="text-primary hover:text-primary/80">Privacy Policy</a>
-                            </span>
+                            <label className="flex items-start gap-3 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    required
+                                    className="mt-1 w-5 h-5 rounded bg-surface-container-high border border-outline-variant appearance-none cursor-pointer checked:bg-primary checked:border-primary transition-colors"
+                                />
+                                <span className="font-label text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
+                                    I agree to the{' '}
+                                    <a href="#" className="text-primary hover:text-primary/80">Terms of Service</a>
+                                    {' '}and{' '}
+                                    <a href="#" className="text-primary hover:text-primary/80">Privacy Policy</a>
+                                </span>
+                            </label>
                         </div>
 
                         {/* Submit Button */}
