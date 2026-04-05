@@ -67,9 +67,10 @@ export default function DashboardPage() {
         );
 
         try {
-            // Fetch balance and consumption in parallel
+            // Fetch balance from DB (auto-fallback to DESCO API if cache missing/stale)
+            // Also fetch consumption data in parallel
             const [balanceRes, consumptionRes] = await Promise.all([
-                fetch(`/api/descoProxy?endpoint=getBalance&accountNo=${account.accountNo}&meterNo=${account.meterNo}`),
+                fetch(`/api/balance?accountId=${account.id}`),
                 fetch(`/api/consumption?accountId=${account.id}`).catch(() => null),
             ]);
 
@@ -102,7 +103,7 @@ export default function DashboardPage() {
                     )
                 );
             } else {
-                // Balance fetch failed, still mark as not loading
+                // Balance API error, mark as not loading
                 setAccounts((prev) =>
                     prev.map((a) =>
                         a.id === account.id ? { ...a, loadingLive: false } : a

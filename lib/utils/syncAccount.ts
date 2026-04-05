@@ -30,13 +30,20 @@ export async function syncAccountConsumption(
 ): Promise<{ success: boolean; message?: string; recordsProcessed?: number }> {
     const db = getDb();
 
-    // Calculate date range
-    const toDateObj = new Date();
-    toDateObj.setDate(toDateObj.getDate() - 1); // Hestern (yesterday) is the latest complete day
+    // Calculate date range using Asia/Dhaka timezone (UTC+6)
+    // This ensures we fetch data for the correct dates in local time
+    const tz = 'Asia/Dhaka';
+    
+    // Get current date in Asia/Dhaka timezone
+    const nowInDhaka = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+    
+    // toDate: Yesterday (most recent complete day)
+    const toDateObj = new Date(nowInDhaka);
+    toDateObj.setDate(toDateObj.getDate() - 1);
     const toDate = toDateObj.toISOString().split('T')[0]!;
 
-    const fromDateObj = new Date();
-    // Fetch 1 extra day backward to calculate the first day's diff correctly
+    // fromDate: daysToFetch + 1 days before yesterday (to calculate first day's diff)
+    const fromDateObj = new Date(nowInDhaka);
     fromDateObj.setDate(fromDateObj.getDate() - (daysToFetch + 1));
     const fromDate = fromDateObj.toISOString().split('T')[0]!;
 

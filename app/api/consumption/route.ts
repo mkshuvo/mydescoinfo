@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db/db';
 import { dailyConsumptionCache, descoAccounts } from '@/lib/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNotNull } from 'drizzle-orm';
 import { auth } from '@/lib/auth/server';
 
 /**
@@ -49,10 +49,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get cached consumption data for the last 30 days
+    // Filter out balance-only records (where consumedTaka is NULL) using SQL
+    // Balance-only records are created by /api/balance endpoint when fetching balance without consumption data
+    // Real zero-consumption days have consumedTaka = 0 (explicitly set by sync), not NULL
     const consumptionData = await db
         .select()
         .from(dailyConsumptionCache)
-        .where(eq(dailyConsumptionCache.descoAccountId, accountId))
+        .where(and(
+            eq(dailyConsumptionCache.descoAccountId, accountId),
+            isNotNull(dailyConsumptionCache.consumedTaka) // Exclude balance-only records
+        ))
         .orderBy(desc(dailyConsumptionCache.date))
         .limit(30);
 
@@ -64,6 +70,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to match expected format
+    // Note: consumedTaka is already guaranteed to be non-NULL due to SQL filter above
+    // Real zero-consumption days (consumedTaka = 0) are preserved, only balance-only records (consumedTaka = NULL) are excluded
     const transformedData = consumptionData.map(row => ({
         date: row.date,
         consumedTaka: Number(row.consumedTaka) || 0,
