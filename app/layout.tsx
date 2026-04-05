@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, Manrope, Inter } from 'next/font/google';
 import AuthProvider from '@/components/AuthProvider';
-import Navbar from '@/components/Navbar';
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
@@ -42,8 +41,7 @@ export default function RootLayout({
       </head>
       <body className={`${spaceGrotesk.variable} ${manrope.variable} ${inter.variable} bg-background text-on-surface min-h-screen font-body antialiased`}>
         <AuthProvider>
-          <Navbar />
-          <main>{children}</main>
+          {children}
         </AuthProvider>
       </body>
     </html>
