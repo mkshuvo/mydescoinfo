@@ -46,11 +46,11 @@ export default function DashboardPage() {
             const accts: AccountWithLiveData[] = data.data ?? [];
             setAccounts(accts);
 
-            // Fetch live balance for each account
-            for (const acct of accts) {
-                if (acct.meterNo) {
-                    fetchLiveDataForAccount(acct);
-                }
+            // Fetch live data for all accounts in parallel using Promise.all
+            const accountsWithMeterNo = accts.filter(acct => acct.meterNo);
+            if (accountsWithMeterNo.length > 0) {
+                Promise.all(accountsWithMeterNo.map(acct => fetchLiveDataForAccount(acct)))
+                    .catch((err) => console.error('[Dashboard] Failed to fetch live data:', err));
             }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'An error occurred');
@@ -67,24 +67,24 @@ export default function DashboardPage() {
         );
 
         try {
-            // Fetch balance
-            const balanceRes = await fetch(
-                `/api/descoProxy?endpoint=getBalance&accountNo=${account.accountNo}&meterNo=${account.meterNo}`
-            );
+            // Fetch balance and consumption in parallel
+            const [balanceRes, consumptionRes] = await Promise.all([
+                fetch(`/api/descoProxy?endpoint=getBalance&accountNo=${account.accountNo}&meterNo=${account.meterNo}`),
+                fetch(`/api/consumption?accountId=${account.id}`).catch(() => null),
+            ]);
 
-            // Fetch yesterday's cost from consumption cache
+            // Parse consumption data if available
             let hesternCost: number | null = null;
-            try {
-                const consumptionRes = await fetch(`/api/consumption?accountId=${account.id}`);
-                if (consumptionRes.ok) {
+            if (consumptionRes) {
+                try {
                     const consumptionData = await consumptionRes.json();
                     // First entry is most recent (yesterday/Hestern)
                     if (consumptionData.data && consumptionData.data.length > 0) {
                         hesternCost = consumptionData.data[0]?.dailyTakaDiff ?? null;
                     }
+                } catch {
+                    // Silently fail - hestern cost is optional
                 }
-            } catch {
-                // Silently fail - hestern cost is optional
             }
 
             if (balanceRes.ok) {
@@ -99,6 +99,13 @@ export default function DashboardPage() {
                                 loadingLive: false,
                             }
                             : a
+                    )
+                );
+            } else {
+                // Balance fetch failed, still mark as not loading
+                setAccounts((prev) =>
+                    prev.map((a) =>
+                        a.id === account.id ? { ...a, loadingLive: false } : a
                     )
                 );
             }

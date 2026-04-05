@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/server';
 import https from 'https';
+import { fetchWithTimeout, DEFAULT_API_TIMEOUT_MS } from '@/lib/utils/fetchWithTimeout';
 
 const DESCO_API_BASE_URL = 'https://prepaid.desco.org.bd/api/tkdes/customer';
 
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const descoResponse = await fetch(targetUrl, {
+    const descoResponse = await fetchWithTimeout(targetUrl, {
       method: 'GET',
       headers: {
         Accept: 'application/json',

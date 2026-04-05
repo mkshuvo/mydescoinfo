@@ -3,6 +3,7 @@ import { dailyConsumptionCache } from '@/lib/db/schema';
 import type { DailyConsumptionInfo } from '@/Interfaces/getCustomerDailyConsumption';
 import type { BalanceInfo } from '@/Interfaces/getBalance';
 import https from 'https';
+import { fetchWithTimeout } from '@/lib/utils/fetchWithTimeout';
 
 const DESCO_API_BASE_URL = 'https://prepaid.desco.org.bd/api/tkdes/customer';
 
@@ -40,8 +41,8 @@ export async function syncAccountConsumption(
     const fromDate = fromDateObj.toISOString().split('T')[0]!;
 
     try {
-        // 1. Fetch consumption history
-        const consumptionRes = await fetch(
+        // 1. Fetch consumption history with timeout
+        const consumptionRes = await fetchWithTimeout(
             `${DESCO_API_BASE_URL}/getCustomerDailyConsumption?accountNo=${accountNo}&meterNo=${meterNo}&dateFrom=${fromDate}&dateTo=${toDate}`,
             {
                 headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
@@ -65,10 +66,10 @@ export async function syncAccountConsumption(
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
-        // 2. Fetch current balance (optional, failure shouldn't block consumption caching)
+        // 2. Fetch current balance with timeout (optional, failure shouldn't block consumption caching)
         let currentBalance: number | null = null;
         try {
-            const balanceRes = await fetch(
+            const balanceRes = await fetchWithTimeout(
                 `${DESCO_API_BASE_URL}/getBalance?accountNo=${accountNo}&meterNo=${meterNo}`,
                 {
                     headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
@@ -80,8 +81,13 @@ export async function syncAccountConsumption(
                 const balanceData: BalanceApiResponse = await balanceRes.json();
                 currentBalance = balanceData.data?.balance ?? null;
             }
-        } catch {
-            console.warn(`[SYNC] Failed to fetch balance for ${accountNo}`);
+        } catch (err) {
+            const timeoutMsg = err instanceof Error && err.message.includes('timeout') ? err.message : null;
+            if (timeoutMsg) {
+                console.warn(`[SYNC] Balance fetch timeout for ${accountNo}: ${timeoutMsg}`);
+            } else {
+                console.warn(`[SYNC] Failed to fetch balance for ${accountNo}`);
+            }
         }
 
         // 3. Process and Insert/Update Cache
@@ -96,12 +102,17 @@ export async function syncAccountConsumption(
             const isFirstDayOfMonth = currentDateObj.getDate() === 1;
             const isSameMonth = prevDateObj.getMonth() === currentDateObj.getMonth();
 
-            // Calculate Diffs
+            // Calculate Taka Diff - resets on 1st of month or when crossing month boundary
             let dailyTakaDiff = currentDay.consumedTaka;
             if (!isFirstDayOfMonth && isSameMonth) {
                 dailyTakaDiff = currentDay.consumedTaka - prevDay.consumedTaka;
             }
-            const dailyUnitDiff = currentDay.consumedUnit - prevDay.consumedUnit;
+
+            // Calculate Unit Diff - also resets on month boundary (units are cumulative within month)
+            let dailyUnitDiff = currentDay.consumedUnit;
+            if (!isFirstDayOfMonth && isSameMonth) {
+                dailyUnitDiff = currentDay.consumedUnit - prevDay.consumedUnit;
+            }
 
             // Upsert into DB
             await db

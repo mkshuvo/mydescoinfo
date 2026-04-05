@@ -7,6 +7,13 @@ import { descoAccounts } from '@/lib/db/schema';
 import { syncAccountConsumption } from '@/lib/utils/syncAccount';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import https from 'https';
+import { fetchWithTimeout } from '@/lib/utils/fetchWithTimeout';
+
+// Agent to bypass SSL verification (DESCO API has certificate issues)
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+});
 
 const addAccountSchema = z.object({
     accountNo: z.string().min(1, 'Account number is required'),
@@ -79,10 +86,12 @@ export async function POST(request: NextRequest) {
 
     if (!resolvedMeterNo) {
         try {
-            const infoRes = await fetch(
+            const infoRes = await fetchWithTimeout(
                 `https://prepaid.desco.org.bd/api/tkdes/customer/getCustomerInfo?accountNo=${accountNo}&meterNo=0`,
                 {
                     headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' },
+                    // @ts-expect-error - Agent is not in standard fetch types but works with Node.js
+                    agent: httpsAgent,
                 }
             );
             const infoData = await infoRes.json();
@@ -96,7 +105,12 @@ export async function POST(request: NextRequest) {
             }
         } catch (err) {
             // Non-critical — we can still add the account without a meter number
-            console.error('[ACCOUNTS] Error resolving meter number for', accountNo, err);
+            const timeoutMsg = err instanceof Error && err.message.includes('timeout') ? err.message : null;
+            if (timeoutMsg) {
+                console.warn('[ACCOUNTS] Meter number resolution timeout:', timeoutMsg);
+            } else {
+                console.error('[ACCOUNTS] Error resolving meter number for', accountNo, err);
+            }
         }
     }
 

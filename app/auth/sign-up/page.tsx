@@ -5,6 +5,43 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 
+// Password validation configuration (must match server-side)
+const PASSWORD_CONFIG = {
+    minLength: 8,
+    requireUppercase: true,
+    requireLowercase: true,
+    requireNumber: true,
+    requireSpecialChar: false,
+};
+
+/**
+ * Validates password strength according to security best practices
+ */
+function validatePassword(password: string): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!password || password.length < PASSWORD_CONFIG.minLength) {
+        errors.push(`Password must be at least ${PASSWORD_CONFIG.minLength} characters long`);
+    }
+
+    if (PASSWORD_CONFIG.requireUppercase && !/[A-Z]/.test(password)) {
+        errors.push('Password must contain at least one uppercase letter');
+    }
+
+    if (PASSWORD_CONFIG.requireLowercase && !/[a-z]/.test(password)) {
+        errors.push('Password must contain at least one lowercase letter');
+    }
+
+    if (PASSWORD_CONFIG.requireNumber && !/\d/.test(password)) {
+        errors.push('Password must contain at least one number');
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors,
+    };
+}
+
 export default function SignUpPage() {
     const router = useRouter();
     const [name, setName] = useState('');
@@ -17,6 +54,14 @@ export default function SignUpPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+
+        // Validate password before submitting
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.valid) {
+            setError(passwordValidation.errors.join('. '));
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -27,7 +72,7 @@ export default function SignUpPage() {
             });
 
             if (error) {
-                setError(error.message);
+                setError(error.message ?? 'An unexpected error occurred');
                 setLoading(false);
                 return;
             }
