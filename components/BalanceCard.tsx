@@ -9,26 +9,41 @@ interface BalanceCardProps {
 const BalanceCard: React.FC<BalanceCardProps> = ({ balanceData, loading }) => {
     if (loading) {
         return (
-            <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/30 border border-blue-700/30 p-6 rounded-2xl shadow-lg">
-                <h2 className="text-lg text-blue-300 font-semibold mb-2">Current Balance</h2>
-                <p className="text-5xl font-bold text-blue-200 animate-pulse">৳ ...</p>
+            <div className="bg-surface-container-low rounded-xl p-8 kinetic-glow">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-surface-container-highest rounded-lg">
+                        <span className="material-symbols-outlined text-primary text-xl">account_balance_wallet</span>
+                    </div>
+                    <h2 className="font-label text-sm text-on-surface-variant uppercase tracking-wider">Current Balance</h2>
+                </div>
+                <p className="text-5xl font-headline font-bold text-primary animate-pulse">৳ ...</p>
             </div>
         );
     }
 
     if (!balanceData) {
         return (
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700/30 p-6 rounded-2xl shadow-lg">
-                <h2 className="text-lg text-gray-400 font-semibold mb-2">Current Balance</h2>
-                <p className="text-5xl font-bold text-gray-600">৳ 0.00</p>
+            <div className="bg-surface-container-low rounded-xl p-8 kinetic-glow">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-surface-container-highest rounded-lg">
+                        <span className="material-symbols-outlined text-on-surface-variant text-xl">account_balance_wallet</span>
+                    </div>
+                    <h2 className="font-label text-sm text-on-surface-variant uppercase tracking-wider">Current Balance</h2>
+                </div>
+                <p className="text-5xl font-headline font-bold text-on-surface-variant">৳ 0.00</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-700/30 p-6 rounded-2xl shadow-lg">
-            <h2 className="text-lg text-green-300 font-semibold mb-2">Current Balance</h2>
-            <p className="text-5xl font-bold text-green-400">
+        <div className="bg-gradient-to-br from-primary/20 to-surface-container-low rounded-xl p-8 border border-primary/10 kinetic-glow">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-surface-container-highest rounded-lg">
+                    <span className="material-symbols-outlined text-primary text-xl">account_balance_wallet</span>
+                </div>
+                <h2 className="font-label text-sm text-on-surface-variant uppercase tracking-wider">Current Balance</h2>
+            </div>
+            <p className="text-5xl font-headline font-bold text-on-surface">
                 ৳ {balanceData.balance?.toFixed(2) ?? '0.00'}
             </p>
         </div>

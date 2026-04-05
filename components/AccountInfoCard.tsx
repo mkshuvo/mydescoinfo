@@ -14,22 +14,22 @@ const AccountInfoCard: React.FC<AccountInfoProps> = ({
     readingTime,
 }) => {
     const items = [
-        { label: 'Meter No', value: meterNo },
-        { label: 'Account No', value: accountNo },
-        { label: 'Monthly Consumption', value: `৳ ${currentMonthConsumption}` },
-        { label: 'Last Reading', value: readingTime },
+        { label: 'Meter No', value: meterNo, icon: 'speed' },
+        { label: 'Account No', value: accountNo, icon: 'tag' },
+        { label: 'Monthly Consumption', value: `৳ ${currentMonthConsumption.toFixed(2)}`, icon: 'bolt' },
+        { label: 'Last Reading', value: readingTime, icon: 'schedule' },
     ];
 
     return (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mt-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Account Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-surface-container-low rounded-xl p-6 mt-6 kinetic-glow">
+            <h2 className="font-headline text-xl font-bold text-on-surface mb-6">Account Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {items.map((item) => (
-                    <div key={item.label}>
-                        <p className="text-sm text-gray-500 uppercase tracking-wider">
+                    <div key={item.label} className="border-l-4 border-primary pl-4">
+                        <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest mb-1">
                             {item.label}
                         </p>
-                        <p className="text-lg text-white font-medium mt-1">{item.value}</p>
+                        <p className="text-lg font-headline font-bold text-on-surface">{item.value}</p>
                     </div>
                 ))}
             </div>

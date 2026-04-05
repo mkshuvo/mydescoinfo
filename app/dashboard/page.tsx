@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { authClient } from '@/lib/auth/client';
-import Link from 'next/link';
+import React, { useState } from 'react';
 import type { DescoAccount } from '@/lib/db/schema';
+import DashboardHeader from '@/components/DashboardHeader';
+import QuickStats from '@/components/QuickStats';
+import EmptyState from '@/components/EmptyState';
+import MeterCard from '@/components/MeterCard';
+import AddMeterModal from '@/components/AddMeterModal';
 
 interface AccountWithLiveData extends DescoAccount {
     liveBalance?: number | null;
@@ -12,7 +15,6 @@ interface AccountWithLiveData extends DescoAccount {
 }
 
 export default function DashboardPage() {
-    const { data: session } = authClient.useSession();
     const [accounts, setAccounts] = useState<AccountWithLiveData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -25,8 +27,13 @@ export default function DashboardPage() {
     const [adding, setAdding] = useState(false);
     const [addError, setAddError] = useState<string | null>(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         fetchAccounts();
+
+        // Listen for Add Meter modal trigger from Navbar
+        const handleOpenAddMeter = () => setShowAddModal(true);
+        window.addEventListener('openAddMeterModal', handleOpenAddMeter);
+        return () => window.removeEventListener('openAddMeterModal', handleOpenAddMeter);
     }, []);
 
     const fetchAccounts = async () => {
@@ -60,9 +67,26 @@ export default function DashboardPage() {
         );
 
         try {
+            // Fetch balance
             const balanceRes = await fetch(
                 `/api/descoProxy?endpoint=getBalance&accountNo=${account.accountNo}&meterNo=${account.meterNo}`
             );
+
+            // Fetch yesterday's cost from consumption cache
+            let hesternCost: number | null = null;
+            try {
+                const consumptionRes = await fetch(`/api/consumption?accountId=${account.id}`);
+                if (consumptionRes.ok) {
+                    const consumptionData = await consumptionRes.json();
+                    // First entry is most recent (yesterday/Hestern)
+                    if (consumptionData.data && consumptionData.data.length > 0) {
+                        hesternCost = consumptionData.data[0]?.dailyTakaDiff ?? null;
+                    }
+                }
+            } catch {
+                // Silently fail - hestern cost is optional
+            }
+
             if (balanceRes.ok) {
                 const balanceData = await balanceRes.json();
                 setAccounts((prev) =>
@@ -71,7 +95,7 @@ export default function DashboardPage() {
                             ? {
                                 ...a,
                                 liveBalance: balanceData.data?.balance ?? null,
-                                liveConsumption: balanceData.data?.currentMonthConsumption ?? null,
+                                liveConsumption: hesternCost ?? balanceData.data?.currentMonthConsumption ?? null,
                                 loadingLive: false,
                             }
                             : a
@@ -130,216 +154,90 @@ export default function DashboardPage() {
         setAccounts((prev) => prev.filter((a) => a.id !== id));
     };
 
+    const closeModal = () => {
+        setShowAddModal(false);
+        setAddError(null);
+        setNewAccountNo('');
+        setNewMeterNo('');
+        setNewLabel('');
+    };
+
+    // Calculate totals for quick stats
+    const totalSpend = accounts.reduce((sum, acc) => sum + (acc.liveConsumption ?? 0), 0);
+
+    // Low balance threshold (200 Taka)
+    const LOW_BALANCE_THRESHOLD = 200;
+    const lowBalanceMeters = accounts.filter(
+        (acc) => acc.liveBalance !== null && acc.liveBalance !== undefined && acc.liveBalance < LOW_BALANCE_THRESHOLD
+    ).length;
+
+    // Peak usage threshold (500 Taka daily - considered high consumption)
+    const PEAK_USAGE_THRESHOLD = 500;
+    const peakUsageAlerts = accounts.filter(
+        (acc) => acc.liveConsumption !== null && acc.liveConsumption !== undefined && acc.liveConsumption > PEAK_USAGE_THRESHOLD
+    ).length;
+
     return (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-4xl font-bold text-white">Dashboard</h1>
-                    <p className="text-gray-400 mt-1">
-                        Welcome back, {session?.user?.name ?? 'User'}
-                    </p>
-                </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-green-600/20"
-                >
-                    + Add Account
-                </button>
-            </div>
+        <div className="mx-auto max-w-7xl px-6 py-12">
+            <DashboardHeader />
+
+            <QuickStats
+                totalSpend={totalSpend}
+                lowBalanceMeters={lowBalanceMeters}
+                peakUsageAlerts={peakUsageAlerts}
+            />
 
             {/* Error */}
             {error && (
-                <div className="bg-red-900/30 border border-red-700 text-red-400 px-4 py-3 rounded-lg mb-6">
+                <div className="bg-error/10 border-l-4 border-error text-error px-4 py-3 rounded-lg mb-6">
                     {error}
                 </div>
             )}
 
             {/* Loading */}
             {loading && (
-                <div className="text-center text-gray-400 py-12">
-                    <p className="text-lg">Loading your accounts...</p>
+                <div className="text-center text-on-surface-variant py-12">
+                    <p className="text-lg">Loading your meters...</p>
                 </div>
             )}
 
             {/* Empty State */}
             {!loading && accounts.length === 0 && (
-                <div className="text-center py-20 bg-gray-900 rounded-2xl border border-gray-800">
-                    <div className="text-6xl mb-4">⚡</div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                        No DESCO accounts linked
-                    </h2>
-                    <p className="text-gray-400 mb-6">
-                        Add your DESCO prepaid account number to start tracking
-                    </p>
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg transition-colors"
-                    >
-                        + Add Your First Account
-                    </button>
-                </div>
+                <EmptyState onAddClick={() => setShowAddModal(true)} />
             )}
 
-            {/* Account Cards Grid */}
+            {/* Account Cards Grid - Bento Layout */}
             {!loading && accounts.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {accounts.map((account) => (
-                        <Link
+                        <MeterCard
                             key={account.id}
-                            href={`/dashboard/accounts/${account.id}`}
-                            className="group"
-                        >
-                            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-green-600/50 transition-all duration-200 hover:shadow-lg hover:shadow-green-600/5">
-                                {/* Label & Actions */}
-                                <div className="flex items-start justify-between mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-white group-hover:text-green-400 transition-colors">
-                                            {account.label ?? `Account ${account.accountNo}`}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">#{account.accountNo}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {!account.meterNo && (
-                                            <span className="text-xs bg-yellow-600/20 text-yellow-500 px-2 py-0.5 rounded">
-                                                No Meter
-                                            </span>
-                                        )}
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                handleRemoveAccount(account.id);
-                                            }}
-                                            className="text-gray-600 hover:text-red-400 transition-colors p-1"
-                                            title="Remove account"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Balance */}
-                                <div className="mb-4">
-                                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                                        Current Balance
-                                    </p>
-                                    {account.loadingLive ? (
-                                        <p className="text-2xl font-bold text-gray-600">৳ ...</p>
-                                    ) : account.liveBalance !== undefined && account.liveBalance !== null ? (
-                                        <p className="text-3xl font-bold text-green-400">
-                                            ৳ {account.liveBalance.toFixed(2)}
-                                        </p>
-                                    ) : (
-                                        <p className="text-2xl font-bold text-gray-600">৳ --</p>
-                                    )}
-                                </div>
-
-                                {/* Consumption */}
-                                <div className="flex items-center justify-between text-sm">
-                                    <div>
-                                        <p className="text-gray-500">This Month</p>
-                                        <p className="text-white font-medium">
-                                            {account.liveConsumption !== undefined && account.liveConsumption !== null
-                                                ? `৳ ${account.liveConsumption.toFixed(2)}`
-                                                : '--'}
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-gray-500">Meter</p>
-                                        <p className="text-white font-medium">
-                                            {account.meterNo ?? 'N/A'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </Link>
+                            id={account.id}
+                            label={account.label}
+                            accountNo={account.accountNo}
+                            meterNo={account.meterNo}
+                            liveBalance={account.liveBalance}
+                            liveConsumption={account.liveConsumption}
+                            loadingLive={account.loadingLive}
+                            onRemove={handleRemoveAccount}
+                        />
                     ))}
                 </div>
             )}
 
-            {/* Add Account Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-                    <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8 w-full max-w-md shadow-2xl">
-                        <h2 className="text-2xl font-bold text-white mb-6">Add DESCO Account</h2>
-
-                        {addError && (
-                            <div className="bg-red-900/30 border border-red-700 text-red-400 px-4 py-3 rounded-lg mb-4">
-                                {addError}
-                            </div>
-                        )}
-
-                        <form onSubmit={handleAddAccount} className="space-y-4">
-                            <div>
-                                <label htmlFor="addAccountNo" className="block text-sm font-medium text-gray-300 mb-1">
-                                    Account Number *
-                                </label>
-                                <input
-                                    id="addAccountNo"
-                                    type="text"
-                                    required
-                                    value={newAccountNo}
-                                    onChange={(e) => setNewAccountNo(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-                                    placeholder="e.g. 25013973"
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="addMeterNo" className="block text-sm font-medium text-gray-300 mb-1">
-                                    Meter Number (optional)
-                                </label>
-                                <input
-                                    id="addMeterNo"
-                                    type="text"
-                                    value={newMeterNo}
-                                    onChange={(e) => setNewMeterNo(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-                                    placeholder="Auto-resolved if left blank"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Leave blank to auto-fetch from DESCO
-                                </p>
-                            </div>
-
-                            <div>
-                                <label htmlFor="addLabel" className="block text-sm font-medium text-gray-300 mb-1">
-                                    Label (optional)
-                                </label>
-                                <input
-                                    id="addLabel"
-                                    type="text"
-                                    value={newLabel}
-                                    onChange={(e) => setNewLabel(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
-                                    placeholder="e.g. Home, Office"
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowAddModal(false);
-                                        setAddError(null);
-                                        setNewMeterNo('');
-                                    }}
-                                    className="flex-1 py-3 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold rounded-lg transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={adding}
-                                    className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-500 disabled:bg-green-800 text-white font-semibold rounded-lg transition-colors"
-                                >
-                                    {adding ? 'Adding...' : 'Add Account'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <AddMeterModal
+                isOpen={showAddModal}
+                onClose={closeModal}
+                onSubmit={handleAddAccount}
+                newAccountNo={newAccountNo}
+                setNewAccountNo={setNewAccountNo}
+                newMeterNo={newMeterNo}
+                setNewMeterNo={setNewMeterNo}
+                newLabel={newLabel}
+                setNewLabel={setNewLabel}
+                adding={adding}
+                error={addError}
+            />
         </div>
     );
 }

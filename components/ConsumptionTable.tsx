@@ -11,34 +11,39 @@ const ConsumptionTable: React.FC<ConsumptionTableProps> = ({ dailyDifferences })
     );
 
     return (
-        <div className="mt-6 overflow-x-auto">
-            <h2 className="text-2xl font-bold mb-4 text-white">Daily Consumption</h2>
-            <table className="min-w-full bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                <thead>
-                    <tr className="bg-gray-800 text-gray-300 text-sm uppercase tracking-wider">
-                        <th className="px-4 py-3 text-left">Date</th>
-                        <th className="px-4 py-3 text-right">Consumed (৳)</th>
-                        <th className="px-4 py-3 text-right">Consumed (kWh)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sorted.map((day, index) => (
-                        <tr
-                            key={day.date}
-                            className={`border-t border-gray-800 ${index % 2 === 0 ? 'bg-gray-900' : 'bg-gray-900/50'
-                                } hover:bg-gray-800/50 transition-colors`}
-                        >
-                            <td className="px-4 py-3 text-gray-300">{day.date}</td>
-                            <td className="px-4 py-3 text-right text-green-400 font-medium">
-                                ৳ {day.difference.toFixed(2)}
-                            </td>
-                            <td className="px-4 py-3 text-right text-blue-400 font-medium">
-                                {day.unitDifference.toFixed(2)}
-                            </td>
+        <div className="mt-6 bg-surface-container-low rounded-xl overflow-hidden kinetic-glow">
+            <div className="p-6 border-b border-outline-variant/10">
+                <h2 className="font-headline text-2xl font-bold text-on-surface">Daily Consumption</h2>
+            </div>
+            <div className="overflow-x-auto max-h-96 custom-scrollbar">
+                <table className="min-w-full">
+                    <thead className="sticky top-0 bg-surface-container">
+                        <tr className="text-on-surface-variant text-sm uppercase tracking-widest">
+                            <th className="px-6 py-4 text-left font-label">Date</th>
+                            <th className="px-6 py-4 text-right font-label">Consumed (৳)</th>
+                            <th className="px-6 py-4 text-right font-label">Consumed (kWh)</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {sorted.map((day, index) => (
+                            <tr
+                                key={day.date}
+                                className={`border-t border-outline-variant/10 transition-colors ${
+                                    index % 2 === 0 ? 'bg-surface-container-low' : 'bg-surface-container-low/50'
+                                } hover:bg-surface-container-high`}
+                            >
+                                <td className="px-6 py-4 text-on-surface font-body">{day.date}</td>
+                                <td className="px-6 py-4 text-right text-primary font-headline font-bold">
+                                    ৳ {day.difference.toFixed(2)}
+                                </td>
+                                <td className="px-6 py-4 text-right text-tertiary font-headline font-bold">
+                                    {day.unitDifference.toFixed(2)}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

@@ -31,7 +31,7 @@ export async function syncAccountConsumption(
 
     // Calculate date range
     const toDateObj = new Date();
-    toDateObj.setDate(toDateObj.getDate() - 1); // Yesterday is the latest complete day
+    toDateObj.setDate(toDateObj.getDate() - 1); // Hestern (yesterday) is the latest complete day
     const toDate = toDateObj.toISOString().split('T')[0]!;
 
     const fromDateObj = new Date();
